@@ -1,23 +1,42 @@
 import express from "express";
 const app = express();
 export default app;
+import { addEmployee } from "#db/employees";
 
 import employees from "#db/employees";
+
+app.use(express.json())
 
 app.route("/").get((req, res) => {
   res.send("Hello employees!");
 });
 
-app.route("/employees").get((req, res) => {
+app.route("/employees")
+.get((req, res) => {
   res.send(employees);
-});
+})
+.post((req,res,next)=>{
+  const employee = req.body
+    //ToDo - Check Format
+  if (!employee){
+    res.status(400).send("Incorrect Format - Please Try Again")
+  }
+  if (!employee.name){
+    res.status(400).send("No Name Provided - Please Try Again")
+  }
 
+  addEmployee(employee)
+  res.status(201).send(employee)
+  next()
+})
 // Note: this middleware has to come first! Otherwise, Express will treat
 // "random" as the argument to the `id` parameter of /employees/:id.
-app.route("/employees/random").get((req, res) => {
+app.route("/employees/random")
+.get((req, res) => {
   const randomIndex = Math.floor(Math.random() * employees.length);
   res.send(employees[randomIndex]);
-});
+})
+
 
 app.route("/employees/:id").get((req, res) => {
   const { id } = req.params;
@@ -32,3 +51,7 @@ app.route("/employees/:id").get((req, res) => {
 
   res.send(employee);
 });
+
+app.use((err,req,res,next)=>{
+  res.status(500).send("uncaught error: " + err)
+})
